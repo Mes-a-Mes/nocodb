@@ -1,26 +1,23 @@
 import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
-
 import glob from 'glob';
 import SqlClientFactory from '../../sql-client/lib/SqlClientFactory';
 import Debug from '../../util/Debug';
 import Emit from '../../util/emit';
-// import Handlebars from 'handlebars';
-// import mkdirp from 'mkdirp';
 import * as fileHelp from '../../util/file.help';
-
-// import SqlMigrator from './SqlMigrator';
-// import NcConfigFactory from '../../../utils/NcConfigFactory';
 import Noco from '../../../Noco';
-import { XKnex } from '../../sql-data-mapper';
 import Project from '../../../models/Project';
-import Base from '../../../models/Base';
 import NcConnectionMgrv2 from '../../../utils/common/NcConnectionMgrv2';
 import Result from '../../util/Result';
+import type Base from '../../../models/Base';
+import type { XKnex } from '../../sql-data-mapper';
+import type { Knex } from 'knex';
 
 const evt = new Emit();
+
 const log = new Debug('KnexMigrator');
+
 const NC_MIGRATION = 'nc_migrations';
 /**
  * Class to create an instance of KnexMigrator
@@ -383,7 +380,7 @@ export default class KnexMigratorv2 {
 
   async _initDbWithSql(base: Base) {
     const sqlClient = await this.getSqlClient(base);
-    const connectionConfig = base.getConnectionConfig();
+    const connectionConfig = await base.getConnectionConfig();
     if (connectionConfig.client === 'oracledb') {
       this.emit(
         `${connectionConfig.client}: Creating DB if not exists ${connectionConfig.connection.user}`
@@ -428,7 +425,7 @@ export default class KnexMigratorv2 {
     // }
   }
 
-  protected async getSqlClient(base: Base): Promise<any> {
+  protected async getSqlClient(base: Base) {
     return NcConnectionMgrv2.getSqlClient(base);
   }
 
@@ -753,7 +750,7 @@ export default class KnexMigratorv2 {
             const vm = this;
 
             const trx = sqlClient.knex.isTransaction
-              ? sqlClient.knex
+              ? (sqlClient.knex as Knex.Transaction)
               : await sqlClient.knex.transaction();
             try {
               for (const query of upStatements) {
@@ -920,7 +917,7 @@ export default class KnexMigratorv2 {
           const vm = this;
 
           const trx = sqlClient.knex.isTransaction
-            ? sqlClient.knex
+            ? (sqlClient.knex as Knex.Transaction)
             : await sqlClient.knex.transaction();
           try {
             for (const query of downStatements) {

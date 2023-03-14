@@ -11,6 +11,7 @@ import {
   message,
   populateInsertObject,
   ref,
+  storeToRefs,
   useApi,
   useI18n,
   useInjectionState,
@@ -30,17 +31,19 @@ const [useProvideExpandedFormStore, useExpandedFormStore] = useInjectionState((m
 
   const { t } = useI18n()
 
-  const commentsOnly = ref(false)
+  const commentsOnly = ref(true)
 
   const commentsAndLogs = ref<any[]>([])
 
   const comment = ref('')
 
-  const commentsDrawer = ref(false)
+  const commentsDrawer = ref(true)
+
+  const saveRowAndStay = ref(0)
 
   const changedColumns = ref(new Set<string>())
 
-  const { project } = useProject()
+  const { project } = storeToRefs(useProject())
 
   const rowStore = useProvideSmartsheetRowStore(meta, row)
 
@@ -49,7 +52,7 @@ const [useProvideExpandedFormStore, useExpandedFormStore] = useInjectionState((m
   const { sharedView } = useSharedView()
 
   // getters
-  const primaryValue = computed(() => {
+  const displayValue = computed(() => {
     if (row?.value?.row) {
       const col = meta?.value?.columns?.find((c) => c.pv)
 
@@ -101,7 +104,7 @@ const [useProvideExpandedFormStore, useExpandedFormStore] = useInjectionState((m
           fk_model_id: meta.value.id as string,
           comments_only: commentsOnly.value,
         })
-      )?.reverse?.() || []
+      ).list?.reverse?.() || []
   }
 
   const isYou = (email: string) => {
@@ -190,7 +193,8 @@ const [useProvideExpandedFormStore, useExpandedFormStore] = useInjectionState((m
           }
         } else {
           // No columns to update
-          return message.info(t('msg.info.noColumnsToUpdate'))
+          message.info(t('msg.info.noColumnsToUpdate'))
+          return
         }
       }
 
@@ -199,7 +203,7 @@ const [useProvideExpandedFormStore, useExpandedFormStore] = useInjectionState((m
         addOrEditStackRow(row.value, isNewRow)
       }
 
-      message.success(`${primaryValue.value || 'Row'} updated successfully.`)
+      message.success(`${displayValue.value || 'Row'} updated successfully.`)
 
       changedColumns.value = new Set()
     } catch (e: any) {
@@ -237,11 +241,12 @@ const [useProvideExpandedFormStore, useExpandedFormStore] = useInjectionState((m
     isYou,
     commentsDrawer,
     row,
-    primaryValue,
+    displayValue,
     save,
     changedColumns,
     loadRow,
     primaryKey,
+    saveRowAndStay,
   }
 }, 'expanded-form-store')
 

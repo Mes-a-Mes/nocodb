@@ -70,7 +70,8 @@ After the click, it will show a menu and you can enter the column name and choos
 
 You can also click `Show more` for additional menu options.
 
-<img width="445" alt="image" src="https://user-images.githubusercontent.com/35857179/189075678-d18b799f-df13-4f78-a5a5-813e8d3277ae.png">
+![Screenshot 2023-03-03 at 8 13 07 PM](https://user-images.githubusercontent.com/86527202/222749857-0e793db2-a5d2-4b54-8d23-2a0cbbec8f5d.png)
+<!-- <img width="445" alt="image" src="https://user-images.githubusercontent.com/35857179/189075678-d18b799f-df13-4f78-a5a5-813e8d3277ae.png"> -->
 
 Click `Save` button to create the new column. 
 
@@ -85,6 +86,11 @@ To edit column properties, click the down arrow, select `Edit` from the menu.
 You will be able to edit column name & associated datatype using pop-up modal.  You can also click `Show more` for additional menu options.
   
 <img width="497" alt="image" src="https://user-images.githubusercontent.com/35857179/189077270-7acdc818-3747-4307-93fb-e970cb7936f9.png">
+
+Prior to v0.104.3, Advanced menu by default displayed developer specific database configuration options. To avoid unintended tweaks from user, these are now hidden under an easter egg menu. To enable, double click on `show all`/`hide all` button in column edit modal.
+
+![Screenshot 2023-03-06 at 10 45 26 AM](https://user-images.githubusercontent.com/86527202/223024810-85dac1c6-87ef-4193-90cb-3a05be8ccc1d.png)
+
 
 ### Column Delete
 
@@ -159,7 +165,7 @@ You can use Quick Import when you have data from external sources such as Airtab
   - **Use First Row as Headers**: If it is checked, the first row will be treated as header row.
   - **Import Data**: If it is checked, all data will be imported. Otherwise, only table will be created.
   ![image](https://user-images.githubusercontent.com/35857179/197454479-1ed18dce-1d0b-4ee3-88b3-9b6a132dea2a.png)
-- You can revise the table name by double clicking it, column name and column type. By default, the first column will be chosen as <a href="./primary-value" target="_blank">Primary Value</a> and cannot be deleted.
+- You can revise the table name by double clicking it, column name and column type. By default, the first column will be chosen as <a href="./display-value" target="_blank">Display Value</a> and cannot be deleted.
   ![image](https://user-images.githubusercontent.com/35857179/197454633-5b30323e-2b13-4c55-843a-948c093d373e.png)
 - Click `Import` to start importing process. The table will be created and the data will be imported.
   ![image](https://user-images.githubusercontent.com/35857179/197455547-2d93df5e-a7f0-4c88-af53-990067625967.png)
@@ -172,7 +178,7 @@ You can use Quick Import when you have data from external sources such as Airtab
   - **Use First Row as Headers**: If it is checked, the first row will be treated as header row.
   - **Import Data**: If it is checked, all data will be imported. Otherwise, only table will be created.
   ![image](https://user-images.githubusercontent.com/35857179/197455788-8dd8a7d1-38f3-48c3-a05e-6ab0cf25045c.png)
-- You can revise the table name, column name and column type. By default, the first column will be chosen as <a href="./primary-value" target="_blank">Primary Value</a> and cannot be deleted.
+- You can revise the table name, column name and column type. By default, the first column will be chosen as <a href="./display-value" target="_blank">Display Value</a> and cannot be deleted.
   <alert>
   Note: If your Excel file contains multiple sheets, each sheet will be stored in a separate table.
   </alert>

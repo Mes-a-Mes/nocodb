@@ -16,11 +16,13 @@ export interface AppInfo {
   oneClick: boolean
   projectHasAdmin: boolean
   teleEnabled: boolean
+  auditEnabled: boolean
   type: string
   version: string
   ee?: boolean
   ncAttachmentFieldSize: number
   ncMaxAttachmentsAllowed: number
+  isCloud: boolean
 }
 
 export interface StoredState {

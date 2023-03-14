@@ -1,9 +1,9 @@
 import knex from 'knex';
+import mapKeys from 'lodash/mapKeys';
+import find from 'lodash/find';
 import KnexClient from '../KnexClient';
 import Debug from '../../../util/Debug';
 import Result from '../../../util/Result';
-import mapKeys from 'lodash/mapKeys';
-import find from 'lodash/find';
 
 const log = new Debug('OracleClient');
 
@@ -1913,7 +1913,7 @@ class OracleClient extends KnexClient {
    * @returns {Number} code
    * @returns {String} message
    */
-  async totalRecords(_args: any = {}) {
+  async totalRecords(_args: any = {}): Promise<Result> {
     // @ts-ignore
     const func = this.totalRecords.name;
     throw new Error('Function not supported for oracle yet');

@@ -55,6 +55,8 @@ const { eventBus } = useSmartsheetStoreOrThrow()
 eventBus.on((event) => {
   if (event === SmartsheetStoreEvents.FIELD_RELOAD) {
     loadViewColumns()
+  } else if (event === SmartsheetStoreEvents.MAPPED_BY_COLUMN_CHANGE) {
+    loadViewColumns()
   }
 })
 
@@ -68,7 +70,7 @@ watch(
 
 const numberOfHiddenFields = computed(() => filteredFieldList.value?.filter((field) => !field.show)?.length)
 
-const gridPrimaryValueField = computed(() => {
+const gridDisplayValueField = computed(() => {
   if (activeView.value?.type !== ViewTypes.GRID) return null
   const pvCol = Object.values(metaColumnById.value)?.find((col) => col?.pv)
   return filteredFieldList.value?.find((field) => field.fk_column_id === pvCol?.id)
@@ -123,13 +125,11 @@ const coverImageColumnId = computed({
     ) {
       if (activeView.value?.type === ViewTypes.GALLERY) {
         await $api.dbView.galleryUpdate(activeView.value?.id, {
-          ...activeView.value?.view,
           fk_cover_image_col_id: val,
         })
         ;(activeView.value.view as GalleryType).fk_cover_image_col_id = val
       } else if (activeView.value?.type === ViewTypes.KANBAN) {
         await $api.dbView.kanbanUpdate(activeView.value?.id, {
-          ...activeView.value?.view,
           fk_cover_image_col_id: val,
         })
         ;(activeView.value.view as KanbanType).fk_cover_image_col_id = val
@@ -194,7 +194,7 @@ useMenuCloseOnEsc(open)
           <Draggable v-model="fields" item-key="id" @change="onMove($event)">
             <template #item="{ element: field, index: index }">
               <div
-                v-if="filteredFieldList.filter((el) => el !== gridPrimaryValueField).includes(field)"
+                v-if="filteredFieldList.filter((el) => el !== gridDisplayValueField).includes(field)"
                 :key="field.id"
                 class="px-2 py-1 flex items-center"
                 :data-testid="`nc-fields-menu-${field.title}`"
@@ -204,6 +204,7 @@ useMenuCloseOnEsc(open)
                   v-model:checked="field.show"
                   v-e="['a:fields:show-hide']"
                   class="shrink"
+                  :disabled="field.isViewEssentialField"
                   @change="saveOrUpdate(field, index)"
                 >
                   <div class="flex items-center">
@@ -220,15 +221,15 @@ useMenuCloseOnEsc(open)
             </template>
             <template v-if="activeView?.type === ViewTypes.GRID" #header>
               <div
-                v-if="gridPrimaryValueField"
-                :key="`pv-${gridPrimaryValueField.id}`"
+                v-if="gridDisplayValueField"
+                :key="`pv-${gridDisplayValueField.id}`"
                 class="px-2 py-1 flex items-center"
-                :data-testid="`nc-fields-menu-${gridPrimaryValueField.title}`"
+                :data-testid="`nc-fields-menu-${gridDisplayValueField.title}`"
                 @click.stop
               >
                 <a-tooltip placement="bottom">
                   <template #title>
-                    <span class="text-sm">Primary Value</span>
+                    <span class="text-sm">Display Value</span>
                   </template>
 
                   <MdiTableKey class="text-xs" />

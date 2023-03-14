@@ -1,12 +1,12 @@
 import Handlebars from 'handlebars';
-import Model from '../../models/Model';
-import NcPluginMgrv2 from './NcPluginMgrv2';
-import Column from '../../models/Column';
-import Hook from '../../models/Hook';
 import Filter from '../../models/Filter';
 import HookLog from '../../models/HookLog';
-import { HookLogType } from 'nocodb-sdk';
-import FormView from '../../models/FormView';
+import NcPluginMgrv2 from './NcPluginMgrv2';
+import type Model from '../../models/Model';
+import type Column from '../../models/Column';
+import type Hook from '../../models/Hook';
+import type { HookLogType } from 'nocodb-sdk';
+import type FormView from '../../models/FormView';
 
 export function parseBody(template: string, data: any): string {
   if (!template) {
@@ -54,12 +54,14 @@ export async function validateCondition(filters: Filter[], data: any) {
           -1;
         break;
       case 'empty':
+      case 'blank':
         res =
           data[field] === '' ||
           data[field] === null ||
           data[field] === undefined;
         break;
       case 'notempty':
+      case 'notblank':
         res = !(
           data[field] === '' ||
           data[field] === null ||

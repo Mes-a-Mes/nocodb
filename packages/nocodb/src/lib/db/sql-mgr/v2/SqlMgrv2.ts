@@ -4,8 +4,8 @@
 import NcConnectionMgrv2 from '../../../utils/common/NcConnectionMgrv2';
 import SqlClientFactory from '../../sql-client/lib/SqlClientFactory';
 import KnexMigratorv2 from '../../sql-migrator/lib/KnexMigratorv2';
-import Base from '../../../models/Base';
 import Debug from '../../util/Debug';
+import type Base from '../../../models/Base';
 
 const log = new Debug('SqlMgr');
 
@@ -118,7 +118,7 @@ export default class SqlMgrv2 {
     return sqlMigrationStatements;
   }
 
-  protected async getSqlClient(base: Base): Promise<any> {
+  protected async getSqlClient(base: Base) {
     return NcConnectionMgrv2.getSqlClient(base);
   }
 }

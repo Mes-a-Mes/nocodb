@@ -12,6 +12,7 @@ import {
   computed,
   createEventHook,
   extractSdkResponseErrorMsg,
+  fieldLengthValidator,
   fieldRequiredValidator,
   getDateFormat,
   getDateTimeFormat,
@@ -23,6 +24,7 @@ import {
   parseStringDate,
   reactive,
   ref,
+  storeToRefs,
   useI18n,
   useNuxtApp,
   useProject,
@@ -66,7 +68,9 @@ const { $api } = useNuxtApp()
 
 const { addTab } = useTabs()
 
-const { sqlUis, project, loadTables } = useProject()
+const projectStrore = useProject()
+const { loadTables } = projectStrore
+const { sqlUis, project } = storeToRefs(projectStrore)
 
 const sqlUi = ref(sqlUis.value[baseId] || Object.values(sqlUis.value)[0])
 
@@ -110,12 +114,15 @@ const data = reactive<{
 })
 
 const validators = computed(() =>
-  data.tables.reduce<Record<string, [ReturnType<typeof fieldRequiredValidator>]>>((acc, table, tableIdx) => {
+  data.tables.reduce<Record<string, [ReturnType<typeof fieldRequiredValidator>]>>((acc: Record<string, any>, table, tableIdx) => {
     acc[`tables.${tableIdx}.table_name`] = [fieldRequiredValidator()]
     hasSelectColumn.value[tableIdx] = false
 
     table.columns?.forEach((column, columnIdx) => {
-      acc[`tables.${tableIdx}.columns.${columnIdx}.column_name`] = [fieldRequiredValidator()]
+      acc[`tables.${tableIdx}.columns.${columnIdx}.column_name`] = [
+        fieldRequiredValidator(),
+        fieldLengthValidator(project.value?.bases?.[0].type || ClientType.MYSQL),
+      ]
       acc[`tables.${tableIdx}.columns.${columnIdx}.uidt`] = [fieldRequiredValidator()]
       if (isSelect(column)) {
         hasSelectColumn.value[tableIdx] = true
@@ -401,10 +408,14 @@ async function importTemplate() {
 
       const tableId = meta.value?.id
       const projectName = project.value.title!
+      const table_names = data.tables.map((t: Record<string, any>) => t.table_name)
 
       await Promise.all(
         Object.keys(importData).map((key: string) =>
           (async (k) => {
+            if (!table_names.includes(k)) {
+              return
+            }
             const data = importData[k]
             const total = data.length
 
@@ -454,7 +465,7 @@ async function importTemplate() {
       // Successfully imported table data
       message.success(t('msg.success.tableDataImported'))
     } catch (e: any) {
-      message.error(e.message)
+      message.error(await extractSdkResponseErrorMsg(e))
     } finally {
       isImporting.value = false
     }
@@ -516,7 +527,7 @@ async function importTemplate() {
           tab.title = createdTable.title as string
         }
 
-        // set primary value
+        // set display value
         if (createdTable?.columns?.[0]?.id) {
           await $api.dbTableColumn.primaryColumnSet(createdTable.columns[0].id as string)
         }
@@ -627,6 +638,16 @@ function isSelectDisabled(uidt: string, disableSelect = false) {
               <mdi-table class="text-primary" />
               {{ table.table_name }}
             </span>
+          </template>
+
+          <template #extra>
+            <a-tooltip bottom>
+              <template #title>
+                <!-- TODO: i18n -->
+                <span>Delete Table</span>
+              </template>
+              <mdi-delete-outline v-if="data.tables.length > 1" class="text-lg mr-8" @click.stop="deleteTable(tableIdx)" />
+            </a-tooltip>
           </template>
 
           <a-table

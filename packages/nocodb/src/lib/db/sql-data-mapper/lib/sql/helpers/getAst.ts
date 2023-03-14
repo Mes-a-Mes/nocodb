@@ -1,7 +1,7 @@
-import View from '../../../../../models/View';
 import { isSystemColumn, UITypes } from 'nocodb-sdk';
-import Model from '../../../../../models/Model';
-import LinkToAnotherRecordColumn from '../../../../../models/LinkToAnotherRecordColumn';
+import View from '../../../../../models/View';
+import type Model from '../../../../../models/Model';
+import type LinkToAnotherRecordColumn from '../../../../../models/LinkToAnotherRecordColumn';
 
 const getAst = async ({
   query,
@@ -24,7 +24,7 @@ const getAst = async ({
       ...(model.primaryKeys
         ? model.primaryKeys.reduce((o, pk) => ({ ...o, [pk.title]: 1 }), {})
         : {}),
-      ...(model.primaryValue ? { [model.primaryValue.title]: 1 } : {}),
+      ...(model.displayValue ? { [model.displayValue.title]: 1 } : {}),
     };
   }
 

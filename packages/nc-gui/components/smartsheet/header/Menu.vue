@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { LinkToAnotherRecordType } from 'nocodb-sdk'
+import type { ColumnReqType, LinkToAnotherRecordType } from 'nocodb-sdk'
 import { RelationTypes, UITypes } from 'nocodb-sdk'
 import {
   ActiveViewInj,
@@ -9,8 +9,6 @@ import {
   Modal,
   ReloadViewDataHookInj,
   SmartsheetStoreEvents,
-  defineEmits,
-  defineProps,
   extractSdkResponseErrorMsg,
   getUniqueColumnName,
   inject,
@@ -62,13 +60,13 @@ const deleteColumn = () =>
         }
 
         $e('a:column:delete')
-      } catch (e) {
+      } catch (e: any) {
         message.error(await extractSdkResponseErrorMsg(e))
       }
     },
   })
 
-const setAsPrimaryValue = async () => {
+const setAsDisplayValue = async () => {
   try {
     await $api.dbTableColumn.primaryColumnSet(column?.value?.id as string)
 
@@ -95,7 +93,7 @@ const sortByColumn = async (direction: 'asc' | 'desc') => {
     })
     eventBus.emit(SmartsheetStoreEvents.SORT_RELOAD)
     reloadDataHook?.trigger()
-  } catch (e) {
+  } catch (e: any) {
     message.error(await extractSdkResponseErrorMsg(e))
   }
 }
@@ -107,7 +105,7 @@ const duplicateColumn = async () => {
   const duplicateColumnName = getUniqueColumnName(`${column!.value.title}_copy`, meta!.value!.columns!)
 
   // construct column create payload
-  switch (column.value.uidt) {
+  switch (column?.value.uidt) {
     case UITypes.LinkToAnotherRecord:
     case UITypes.Lookup:
     case UITypes.Rollup:
@@ -144,14 +142,14 @@ const duplicateColumn = async () => {
   }
 
   try {
-    const gridViewColumnList = await $api.dbViewColumn.list(view.value?.id as string)
+    const gridViewColumnList = (await $api.dbViewColumn.list(view.value?.id as string)).list
 
     const currentColumnIndex = gridViewColumnList.findIndex((f) => f.fk_column_id === column!.value.id)
     let newColumnOrder
     if (currentColumnIndex === gridViewColumnList.length - 1) {
-      newColumnOrder = gridViewColumnList[currentColumnIndex].order + 1
+      newColumnOrder = gridViewColumnList[currentColumnIndex].order! + 1
     } else {
-      newColumnOrder = (gridViewColumnList[currentColumnIndex].order! + gridViewColumnList[currentColumnIndex + 1]?.order) / 2
+      newColumnOrder = (gridViewColumnList[currentColumnIndex].order! + gridViewColumnList[currentColumnIndex + 1].order!) / 2
     }
 
     await $api.dbTableColumn.create(meta!.value!.id!, {
@@ -161,7 +159,7 @@ const duplicateColumn = async () => {
         order: newColumnOrder,
         view_id: view.value?.id as string,
       },
-    })
+    } as ColumnReqType)
     await getMeta(meta!.value!.id!, true)
 
     eventBus.emit(SmartsheetStoreEvents.FIELD_RELOAD)
@@ -175,7 +173,7 @@ const duplicateColumn = async () => {
 
 // add column before or after current column
 const addColumn = async (before = false) => {
-  const gridViewColumnList = await $api.dbViewColumn.list(view.value?.id as string)
+  const gridViewColumnList = (await $api.dbViewColumn.list(view.value?.id as string)).list
 
   const currentColumnIndex = gridViewColumnList.findIndex((f) => f.fk_column_id === column!.value.id)
 
@@ -204,11 +202,11 @@ const addColumn = async (before = false) => {
 
 // hide the field in view
 const hideField = async () => {
-  const gridViewColumnList = await $api.dbViewColumn.list(view.value?.id as string)
+  const gridViewColumnList = (await $api.dbViewColumn.list(view.value?.id as string)).list
 
   const currentColumn = gridViewColumnList.find((f) => f.fk_column_id === column!.value.id)
 
-  await $api.dbViewColumn.update(view.value.id, currentColumn.id, { show: false })
+  await $api.dbViewColumn.update(view.value!.id!, currentColumn!.id!, { show: false })
   eventBus.emit(SmartsheetStoreEvents.FIELD_RELOAD)
 }
 </script>
@@ -280,13 +278,13 @@ const hideField = async () => {
         </a-menu-item>
         <a-divider class="!my-0" />
 
-        <a-menu-item v-if="(!virtual || column?.uidt === UITypes.Formula) && !column?.pv" @click="setAsPrimaryValue">
+        <a-menu-item v-if="(!virtual || column?.uidt === UITypes.Formula) && !column?.pv" @click="setAsDisplayValue">
           <div class="nc-column-set-primary nc-header-menu-item">
             <MdiStar class="text-primary" />
 
             <!--       todo : tooltip -->
-            <!-- Set as Primary value -->
-            {{ $t('activity.setPrimary') }}
+            <!-- Set as Display value -->
+            {{ $t('activity.setDisplay') }}
           </div>
         </a-menu-item>
 
