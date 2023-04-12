@@ -8,6 +8,7 @@ import {
   comparisonOpList,
   comparisonSubOpList,
   computed,
+  iconMap,
   inject,
   ref,
   useNuxtApp,
@@ -109,7 +110,7 @@ const filterUpdateCondition = (filter: FilterType, i: number) => {
     }
   }
   saveOrUpdate(filter, i)
-  filterPrevComparisonOp.value[filter.id] = filter.comparison_op
+  filterPrevComparisonOp.value[filter.id!] = filter.comparison_op!
   $e('a:filter:update', {
     logical: filter.logical_op,
     comparison: filter.comparison_op,
@@ -165,11 +166,10 @@ const selectFilterField = (filter: Filter, index: number) => {
   // since the existing one may not be supported for the new field
   // e.g. `eq` operator is not supported in checkbox field
   // hence, get the first option of the supported operators of the new field
-  filter.comparison_op = comparisonOpList(col.uidt as UITypes).filter((compOp) =>
-    isComparisonOpAllowed(filter, compOp),
-  )?.[0].value
+  filter.comparison_op = comparisonOpList(col.uidt as UITypes).find((compOp) => isComparisonOpAllowed(filter, compOp))
+    ?.value as FilterType['comparison_op']
 
-  if ([UITypes.Date, UITypes.DateTime].includes(col.uidt as UITypes) && !['blank', 'notblank'].includes(filter.comparison_op)) {
+  if ([UITypes.Date, UITypes.DateTime].includes(col.uidt as UITypes) && !['blank', 'notblank'].includes(filter.comparison_op!)) {
     if (filter.comparison_op === 'isWithin') {
       filter.comparison_sub_op = 'pastNumberOfDays'
     } else {
@@ -214,7 +214,8 @@ defineExpose({
       <template v-for="(filter, i) in filters" :key="i">
         <template v-if="filter.status !== 'delete'">
           <template v-if="filter.is_group">
-            <MdiCloseBox
+            <component
+              :is="iconMap.closeBox"
               v-if="!filter.readOnly"
               :key="i"
               small
@@ -252,7 +253,8 @@ defineExpose({
             </div>
           </template>
           <template v-else>
-            <MdiCloseBox
+            <component
+              :is="iconMap.closeBox"
               v-if="!filter.readOnly"
               class="nc-filter-item-remove-btn text-grey self-center"
               @click.stop="deleteFilter(filter, i)"
@@ -362,18 +364,18 @@ defineExpose({
     </div>
 
     <div class="flex gap-2 mb-2 mt-4">
-      <a-button class="elevation-0 text-capitalize" type="primary" ghost @click.stop="addFilter">
+      <a-button class="elevation-0 text-capitalize" type="primary" ghost @click.stop="addFilter()">
         <div class="flex items-center gap-1">
-          <MdiPlus />
+          <component :is="iconMap.plus" />
           <!-- Add Filter -->
           {{ $t('activity.addFilter') }}
         </div>
       </a-button>
 
-      <a-button v-if="!webHook" class="text-capitalize !text-gray-500" @click.stop="addFilterGroup">
+      <a-button v-if="!webHook" class="text-capitalize !text-gray-500" @click.stop="addFilterGroup()">
         <div class="flex items-center gap-1">
           <!-- Add Filter Group -->
-          <MdiPlus />
+          <component :is="iconMap.plus" />
           {{ $t('activity.addFilterGroup') }}
         </div>
       </a-button>

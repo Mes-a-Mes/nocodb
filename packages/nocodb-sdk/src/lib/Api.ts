@@ -154,13 +154,11 @@ export interface AuditType {
     | 'LINK_RECORD'
     | 'UNLINK_RECORD'
     | 'DELETE'
-    | 'CREATED'
-    | 'DELETED'
-    | 'RENAMED'
+    | 'CREATE'
+    | 'RENAME'
     | 'IMPORT_FROM_ZIP'
     | 'EXPORT_TO_FS'
     | 'EXPORT_TO_ZIP'
-    | 'UPDATED'
     | 'SIGNIN'
     | 'SIGNUP'
     | 'PASSWORD_RESET'
@@ -500,6 +498,17 @@ export interface CommentReqType {
 }
 
 /**
+ * Model for Comment Update Request
+ */
+export interface CommentUpdateReqType {
+  /**
+   * Description for the target row
+   * @example This is the comment for the row
+   */
+  description?: string;
+}
+
+/**
  * Model for Filter
  */
 export interface FilterType {
@@ -612,6 +621,16 @@ export interface FilterListType {
 }
 
 /**
+ * Model for Filter Log List
+ */
+export interface FilterLogListType {
+  /** List of filter objects */
+  list: FilterType[];
+  /** Model for Paginated */
+  pageInfo: PaginatedType;
+}
+
+/**
  * Model for Filter Request
  */
 export interface FilterReqType {
@@ -690,7 +709,7 @@ export interface FilterReqType {
   /** Foreign Key to Column */
   fk_column_id?: IdType;
   /** Belong to which filter ID */
-  fk_parent_id?: IdType;
+  fk_parent_id?: StringOrNullType;
   /** Is this filter grouped? */
   is_group?: BoolType;
   /** Logical Operator */
@@ -815,6 +834,11 @@ export interface FormColumnType {
   required?: BoolType;
   /** Is this column shown in Form? */
   show?: BoolType;
+  /**
+   * Indicates whether the 'Fill by scan' button is visible for this column or not.
+   * @example true
+   */
+  enable_scanner?: BoolType;
   /** Form Column UUID (Not in use) */
   uuid?: StringOrNullType;
 }
@@ -886,7 +910,7 @@ export interface GalleryType {
   /** Model for Bool */
   deleted?: BoolType;
   /** Foreign Key to Cover Image Column */
-  fk_cover_image_col_id?: string;
+  fk_cover_image_col_id?: StringOrNullType;
   /** Foreign Key to Model */
   fk_model_id?: string;
   /** Foreign Key to View */
@@ -948,6 +972,29 @@ export interface GeoLocationType {
  * Model for Grid
  */
 export interface GridType {
+  /** Unique ID */
+  id?: IdType;
+  /** Project ID */
+  project_id?: IdType;
+  /** Base ID */
+  base_id?: IdType;
+  /** Foreign Key to View */
+  fk_view_id?: IdType;
+  /**
+   * Row Height
+   * @example 1
+   */
+  row_height?: number;
+  /** Meta info for Grid Model */
+  meta?: MetaType;
+  /** Grid View Columns */
+  columns?: GridColumnType[];
+}
+
+/**
+ * Model for Grid
+ */
+export interface GridCopyType {
   /** Unique ID */
   id?: IdType;
   /** Project ID */
@@ -1066,7 +1113,13 @@ export interface HookType {
    * Hook Operation
    * @example insert
    */
-  operation?: 'delete' | 'insert' | 'update';
+  operation?:
+    | 'insert'
+    | 'update'
+    | 'delete'
+    | 'bulkInsert'
+    | 'bulkUpdate'
+    | 'bulkDelete';
   /**
    * Retry Count
    * @example 10
@@ -1089,6 +1142,11 @@ export interface HookType {
   title?: string;
   /** Hook Type */
   type?: string;
+  /**
+   * Hook Version
+   * @example v2
+   */
+  version?: 'v1' | 'v2';
 }
 
 /**
@@ -1124,7 +1182,13 @@ export interface HookReqType {
    * Hook Operation
    * @example insert
    */
-  operation: 'delete' | 'insert' | 'update';
+  operation:
+    | 'insert'
+    | 'update'
+    | 'delete'
+    | 'bulkInsert'
+    | 'bulkUpdate'
+    | 'bulkDelete';
   /**
    * Retry Count
    * @example 10
@@ -1147,6 +1211,8 @@ export interface HookReqType {
   title: string;
   /** Hook Type */
   type?: string | null;
+  /** Is this hook assoicated with some filters */
+  condition?: BoolType;
 }
 
 /**
@@ -1163,26 +1229,77 @@ export interface HookListType {
  * Model for Hook Log
  */
 export interface HookLogType {
+  /**
+   * Unique Base ID
+   * @example ds_jxuewivwbxeum2
+   */
   base_id?: string;
+  /** Hook Conditions */
   conditions?: string;
-  error?: string;
-  error_code?: string;
-  error_message?: string;
-  event?: string;
+  /** Error */
+  error?: StringOrNullType;
+  /** Error Code */
+  error_code?: StringOrNullType;
+  /** Error Message */
+  error_message?: StringOrNullType;
+  /**
+   * Hook Event
+   * @example after
+   */
+  event?: 'after' | 'before';
+  /**
+   * Execution Time in milliseconds
+   * @example 98
+   */
   execution_time?: string;
-  /** Model for StringOrNull */
+  /** Foreign Key to Hook */
   fk_hook_id?: StringOrNullType;
   /** Unique ID */
-  id?: IdType;
+  id?: StringOrNullType;
+  /** Hook Notification */
   notifications?: string;
-  operation?: string;
-  payload?: any;
+  /**
+   * Hook Operation
+   * @example insert
+   */
+  operation?:
+    | 'insert'
+    | 'update'
+    | 'delete'
+    | 'bulkInsert'
+    | 'bulkUpdate'
+    | 'bulkDelete';
+  /**
+   * Hook Payload
+   * @example {"method":"POST","body":"{{ json data }}","headers":[{}],"parameters":[{}],"auth":"","path":"https://webhook.site/6eb45ce5-b611-4be1-8b96-c2965755662b"}
+   */
+  payload?: string;
+  /**
+   * Project ID
+   * @example p_tbhl1hnycvhe5l
+   */
   project_id?: string;
-  response?: string;
-  /** Model for Bool */
+  /** Hook Response */
+  response?: StringOrNullType;
+  /** Is this testing hook call? */
   test_call?: BoolType;
-  triggered_by?: string;
+  /** Who triggered the hook? */
+  triggered_by?: StringOrNullType;
+  /**
+   * Hook Type
+   * @example URL
+   */
   type?: string;
+}
+
+/**
+ * Model for Hook Log List
+ */
+export interface HookLogListType {
+  /** List of hook objects */
+  list: HookLogType[];
+  /** Model for Paginated */
+  pageInfo: PaginatedType;
 }
 
 /**
@@ -1211,7 +1328,7 @@ export interface KanbanType {
   /** View ID */
   fk_view_id?: IdType;
   /** Cover Image Column ID */
-  fk_cover_image_col_id?: IdType;
+  fk_cover_image_col_id?: StringOrNullType;
   /** Kanban Columns */
   columns?: KanbanColumnType[];
   /** Meta Info for Kanban */
@@ -1697,7 +1814,9 @@ export interface PluginTestReqType {
   /** Plugin Title */
   title: string;
   /** Plugin Input as JSON string */
-  input: string;
+  input: string | object;
+  /** @example Email */
+  category: string;
 }
 
 /**
@@ -1773,6 +1892,24 @@ export interface ProjectReqType {
    * @example My Project
    */
   title: string;
+}
+
+/**
+ * Model for Project Update Request
+ */
+export interface ProjectUpdateReqType {
+  /**
+   * Primary Theme Color
+   * @example #24716E
+   */
+  color?: string;
+  /** Project Meta */
+  meta?: MetaType;
+  /**
+   * Project Title
+   * @example My Project
+   */
+  title?: string;
 }
 
 /**
@@ -2165,6 +2302,8 @@ export interface ViewType {
   show: BoolType;
   /** Should show system fields in this view? */
   show_system_fields?: BoolType;
+  /** Is this view default view for the model? */
+  is_default?: BoolType;
   /** View Title */
   title: string;
   /** View Type */
@@ -2927,10 +3066,21 @@ export class Api<
  * @request POST:/api/v1/db/meta/projects/{projectId}/users
  * @response `200` `{
   \**
-   * Success Message
+   * Success Message for inviting single email
    * @example The user has been invited successfully
    *\
   msg?: string,
+  \** @example 8354ddba-a769-4d64-8397-eccb2e2b3c06 *\
+  invite_token?: string,
+  error?: ({
+  \** @example w@nocodb.com *\
+  email?: string,
+  \** @example <ERROR_MESSAGE> *\
+  error?: string,
+
+})[],
+  \** @example w@nocodb.com *\
+  email?: string,
 
 }` OK
  * @response `400` `{
@@ -2947,10 +3097,20 @@ export class Api<
       this.request<
         {
           /**
-           * Success Message
+           * Success Message for inviting single email
            * @example The user has been invited successfully
            */
           msg?: string;
+          /** @example 8354ddba-a769-4d64-8397-eccb2e2b3c06 */
+          invite_token?: string;
+          error?: {
+            /** @example w@nocodb.com */
+            email?: string;
+            /** @example <ERROR_MESSAGE> */
+            error?: string;
+          }[];
+          /** @example w@nocodb.com */
+          email?: string;
         },
         {
           /** @example BadRequest [Error]: <ERROR MESSAGE> */
@@ -3904,16 +4064,20 @@ export class Api<
  * @name Update
  * @summary Update Project
  * @request PATCH:/api/v1/db/meta/projects/{projectId}
- * @response `200` `void` OK
+ * @response `200` `number` OK
  * @response `400` `{
   \** @example BadRequest [Error]: <ERROR MESSAGE> *\
   msg: string,
 
 }`
  */
-    update: (projectId: IdType, data: number, params: RequestParams = {}) =>
+    update: (
+      projectId: IdType,
+      data: ProjectUpdateReqType,
+      params: RequestParams = {}
+    ) =>
       this.request<
-        void,
+        number,
         {
           /** @example BadRequest [Error]: <ERROR MESSAGE> */
           msg: string;
@@ -3923,6 +4087,7 @@ export class Api<
         method: 'PATCH',
         body: data,
         type: ContentType.Json,
+        format: 'json',
         ...params,
       }),
 
@@ -6333,6 +6498,45 @@ export class Api<
         ...params,
       }),
   };
+  dbTableWebhookLogs = {
+    /**
+ * @description List the log data in a given Hook
+ * 
+ * @tags DB Table Webhook Logs
+ * @name List
+ * @summary List Hook Logs
+ * @request GET:/api/v1/db/meta/hooks/{hookId}/logs
+ * @response `200` `HookLogListType` OK
+ * @response `400` `{
+  \** @example BadRequest [Error]: <ERROR MESSAGE> *\
+  msg: string,
+
+}`
+ */
+    list: (
+      hookId: IdType,
+      query?: {
+        /** @min 1 */
+        limit?: number;
+        /** @min 0 */
+        offset?: number;
+      },
+      params: RequestParams = {}
+    ) =>
+      this.request<
+        HookLogListType,
+        {
+          /** @example BadRequest [Error]: <ERROR MESSAGE> */
+          msg: string;
+        }
+      >({
+        path: `/api/v1/db/meta/hooks/${hookId}/logs`,
+        method: 'GET',
+        query: query,
+        format: 'json',
+        ...params,
+      }),
+  };
   dbTableRow = {
     /**
  * @description List all table rows in a given table and project
@@ -8052,6 +8256,29 @@ export class Api<
       }),
 
     /**
+     * @description Update comment in Audit
+     *
+     * @tags Utils
+     * @name CommentUpdate
+     * @summary Update Comment in Audit
+     * @request PATCH:/api/v1/db/meta/audits/{auditId}/comment
+     * @response `200` `number` OK
+     */
+    commentUpdate: (
+      auditId: string,
+      data: CommentUpdateReqType,
+      params: RequestParams = {}
+    ) =>
+      this.request<number, any>({
+        path: `/api/v1/db/meta/audits/${auditId}/comment`,
+        method: 'PATCH',
+        body: data,
+        type: ContentType.Json,
+        format: 'json',
+        ...params,
+      }),
+
+    /**
  * @description Return the number of comments in the given query.
  * 
  * @tags Utils
@@ -8319,6 +8546,9 @@ export class Api<
   ee?: boolean,
   ncAttachmentFieldSize?: number,
   ncMaxAttachmentsAllowed?: number,
+  isCloud?: boolean,
+  \** @example OFF *\
+  automationLogLevel?: "OFF" | "ERROR" | "ALL",
 
 }` OK
  * @response `400` `{
@@ -8347,6 +8577,9 @@ export class Api<
           ee?: boolean;
           ncAttachmentFieldSize?: number;
           ncMaxAttachmentsAllowed?: number;
+          isCloud?: boolean;
+          /** @example OFF */
+          automationLogLevel?: 'OFF' | 'ERROR' | 'ALL';
         },
         {
           /** @example BadRequest [Error]: <ERROR MESSAGE> */
@@ -8699,16 +8932,16 @@ export class Api<
  * @name Create
  * @summary Create Table Hook
  * @request POST:/api/v1/db/meta/tables/{tableId}/hooks
- * @response `200` `HookReqType` OK
+ * @response `200` `HookType` OK
  * @response `400` `{
   \** @example BadRequest [Error]: <ERROR MESSAGE> *\
   msg: string,
 
 }`
  */
-    create: (tableId: IdType, data: AuditType, params: RequestParams = {}) =>
+    create: (tableId: IdType, data: HookReqType, params: RequestParams = {}) =>
       this.request<
-        HookReqType,
+        HookType,
         {
           /** @example BadRequest [Error]: <ERROR MESSAGE> */
           msg: string;
@@ -8769,7 +9002,7 @@ export class Api<
  * @tags DB Table Webhook
  * @name SamplePayloadGet
  * @summary Get Sample Hook Payload
- * @request GET:/api/v1/db/meta/tables/{tableId}/hooks/samplePayload/{operation}
+ * @request GET:/api/v1/db/meta/tables/{tableId}/hooks/samplePayload/{operation}/{version}
  * @response `200` `{
   \** Sample Payload Data *\
   data?: object,
@@ -8783,7 +9016,14 @@ export class Api<
  */
     samplePayloadGet: (
       tableId: IdType,
-      operation: 'update' | 'delete' | 'insert',
+      operation:
+        | 'insert'
+        | 'update'
+        | 'delete'
+        | 'bulkInsert'
+        | 'bulkUpdate'
+        | 'bulkDelete',
+      version: 'v1' | 'v2',
       params: RequestParams = {}
     ) =>
       this.request<
@@ -8796,7 +9036,7 @@ export class Api<
           msg: string;
         }
       >({
-        path: `/api/v1/db/meta/tables/${tableId}/hooks/samplePayload/${operation}`,
+        path: `/api/v1/db/meta/tables/${tableId}/hooks/samplePayload/${operation}/${version}`,
         method: 'GET',
         format: 'json',
         ...params,

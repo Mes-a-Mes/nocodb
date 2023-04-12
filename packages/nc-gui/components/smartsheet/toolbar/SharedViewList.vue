@@ -3,8 +3,10 @@ import { ViewTypes } from 'nocodb-sdk'
 import {
   Empty,
   extractSdkResponseErrorMsg,
+  iconMap,
   message,
   onMounted,
+  parseProp,
   ref,
   useCopy,
   useDashboard,
@@ -70,7 +72,7 @@ const sharedViewUrl = (view: SharedViewType) => {
 
 const renderAllowCSVDownload = (view: SharedViewType) => {
   if (view.type === ViewTypes.GRID) {
-    view.meta = (view.meta && typeof view.meta === 'string' ? JSON.parse(view.meta) : view.meta) as Record<string, any>
+    view.meta = (view.meta && parseProp(view.meta)) as Record<string, any>
     return view.meta?.allowCSVDownload ? '✔️' : '❌'
   } else {
     return 'N/A'
@@ -82,7 +84,7 @@ const copyLink = (view: SharedViewType) => {
     copy(`${dashboardUrl?.value as string}#${sharedViewUrl(view)}`)
     // Copied to clipboard
     message.success(t('msg.info.copiedToClipboard'))
-  } catch (e) {
+  } catch (e: any) {
     message.error(e.message)
   }
 }
@@ -161,8 +163,8 @@ const deleteLink = async (id: string) => {
       <a-table-column key="id" :title="$t('labels.actions')" data-index="title">
         <template #default="{ record }">
           <div class="text-sm flex gap-2" :title="text">
-            <MdiContentCopy class="cursor-pointer" @click="copyLink(record)" />
-            <MdiDeleteOutline class="cursor-pointer" @click="deleteLink(record.id)" />
+            <component :is="iconMap.copy" class="cursor-pointer" @click="copyLink(record)" />
+            <component :is="iconMap.delete" class="cursor-pointer" @click="deleteLink(record.id)" />
           </div>
         </template>
       </a-table-column>

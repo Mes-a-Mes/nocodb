@@ -1,9 +1,13 @@
 import { T } from 'nc-help';
 import { validatePayload } from '../meta/api/helpers';
 import { NcError } from '../meta/helpers/catchError';
-import { Hook, Model } from '../models';
+import { Hook, HookLog, Model } from '../models';
 import { invokeWebhook } from '../meta/helpers/webhookHelpers';
-import populateSamplePayload from '../meta/helpers/populateSamplePayload';
+import {
+  populateSamplePayload,
+  populateSamplePayloadV2,
+} from '../meta/helpers/populateSamplePayload';
+import type { HookType } from 'nocodb-sdk';
 import type { HookReqType, HookTestReqType } from 'nocodb-sdk';
 
 function validateHookPayload(
@@ -26,6 +30,10 @@ export async function hookList(param: { tableId: string }) {
   return await Hook.list({ fk_model_id: param.tableId });
 }
 
+export async function hookLogList(param: { query: any; hookId: string }) {
+  return await HookLog.list({ fk_hook_id: param.hookId }, param.query);
+}
+
 export async function hookCreate(param: {
   tableId: string;
   hook: HookReqType;
@@ -34,12 +42,13 @@ export async function hookCreate(param: {
 
   validateHookPayload(param.hook.notification);
 
-  T.emit('evt', { evt_type: 'webhooks:created' });
-  // todo: type correction
   const hook = await Hook.insert({
     ...param.hook,
     fk_model_id: param.tableId,
   } as any);
+
+  T.emit('evt', { evt_type: 'webhooks:created' });
+
   return hook;
 }
 
@@ -56,8 +65,7 @@ export async function hookUpdate(param: { hookId: string; hook: HookReqType }) {
 
   validateHookPayload(param.hook.notification);
 
-  // todo: correction in swagger
-  return await Hook.update(param.hookId, param.hook as any);
+  return await Hook.update(param.hookId, param.hook);
 }
 
 export async function hookTest(param: {
@@ -73,29 +81,44 @@ export async function hookTest(param: {
 
   const model = await Model.getByIdOrName({ id: param.tableId });
 
+  T.emit('evt', { evt_type: 'webhooks:tested' });
+
   const {
     hook,
     payload: { data, user },
   } = param.hookTest;
-  await invokeWebhook(
-    new Hook(hook),
-    model,
-    data,
-    user,
-    (hook as any)?.filters,
-    true
-  );
-
-  T.emit('evt', { evt_type: 'webhooks:tested' });
+  try {
+    await invokeWebhook(
+      new Hook(hook),
+      model,
+      null,
+      null,
+      data,
+      user,
+      (hook as any)?.filters,
+      true,
+      true
+    );
+  } catch (e) {
+    throw e;
+  }
 
   return true;
 }
 
 export async function tableSampleData(param: {
   tableId: string;
-  operation: 'insert' | 'update';
+  operation: HookType['operation'];
+  version: HookType['version'];
 }) {
   const model = await Model.getByIdOrName({ id: param.tableId });
 
-  return await populateSamplePayload(model, false, param.operation);
+  if (param.version === 'v1') {
+    return await populateSamplePayload(model, false, param.operation);
+  }
+  return await populateSamplePayloadV2(model, false, param.operation);
+}
+
+export async function hookLogCount(param: { hookId: string }) {
+  return await HookLog.count({ hookId: param.hookId });
 }

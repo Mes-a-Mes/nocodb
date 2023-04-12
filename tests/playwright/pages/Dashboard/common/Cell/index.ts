@@ -114,6 +114,10 @@ export class CellPageObject extends BasePage {
       // if text is found, return
       // if text is not found, throw error
       let count = 0;
+      await this.get({
+        index,
+        columnHeader,
+      }).scrollIntoViewIfNeeded();
       while (count < 5) {
         const innerTexts = await this.get({
           index,
@@ -265,22 +269,24 @@ export class CellPageObject extends BasePage {
     value: string[];
   }) {
     // const count = value.length;
-    const cell = this.get({ index, columnHeader });
+    const cell = await this.get({ index, columnHeader });
     const chips = cell.locator('.chips > .chip');
+
+    await this.get({ index, columnHeader }).scrollIntoViewIfNeeded();
 
     // verify chip count & contents
     if (count) await expect(chips).toHaveCount(count);
 
     // verify only the elements that are passed in
     for (let i = 0; i < value.length; ++i) {
-      await expect(await chips.nth(i)).toHaveText(value[i]);
+      await expect(await chips.nth(i).locator('.name')).toHaveText(value[i]);
     }
   }
 
   async unlinkVirtualCell({ index, columnHeader }: CellProps) {
     const cell = this.get({ index, columnHeader });
     await cell.click();
-    await cell.locator('.nc-icon.unlink-icon').click();
+    await cell.locator('.unlink-icon').first().click();
   }
 
   async verifyRoleAccess(param: { role: string }) {
@@ -291,6 +297,7 @@ export class CellPageObject extends BasePage {
     await expect(await cell.locator(`input`)).toHaveCount(param.role === 'creator' || param.role === 'editor' ? 1 : 0);
 
     // press escape to close the input
+    await cell.press('Escape');
     await cell.press('Escape');
 
     await cell.click({ button: 'right', clickCount: 1 });
@@ -315,6 +322,7 @@ export class CellPageObject extends BasePage {
   }
 
   async copyToClipboard({ index, columnHeader }: CellProps, ...clickOptions: Parameters<Locator['click']>) {
+    await this.get({ index, columnHeader }).scrollIntoViewIfNeeded();
     await this.get({ index, columnHeader }).click(...clickOptions);
     await (await this.get({ index, columnHeader }).elementHandle()).waitForElementState('stable');
 

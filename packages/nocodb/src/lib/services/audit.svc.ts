@@ -3,7 +3,8 @@ import DOMPurify from 'isomorphic-dompurify';
 import { validatePayload } from '../meta/api/helpers';
 import Audit from '../models/Audit';
 import Model from '../models/Model';
-import type { AuditRowUpdateReqType } from 'nocodb-sdk';
+import { NcError } from '../meta/helpers/catchError';
+import type { AuditRowUpdateReqType, CommentUpdateReqType } from 'nocodb-sdk';
 
 export async function commentRow(param: {
   rowId: string;
@@ -35,7 +36,7 @@ export async function auditRowUpdate(param: {
     op_type: AuditOperationTypes.DATA,
     op_sub_type: AuditOperationSubTypes.UPDATE,
     description: DOMPurify.sanitize(
-      `Table ${model.table_name} : field ${param.body.column_name} got changed from  ${param.body.prev_value} to ${param.body.value}`
+      `The column ${param.body.column_name} in Table ${model.table_name} has been changed from ${param.body.prev_value} to ${param.body.value}`
     ),
     details: DOMPurify.sanitize(`<span class="">${param.body.column_name}</span>
   : <span class="text-decoration-line-through red px-2 lighten-4 black--text">${param.body.prev_value}</span>
@@ -61,4 +62,22 @@ export async function commentsCount(param: {
     fk_model_id: param.fk_model_id as string,
     ids: param.ids as string[],
   });
+}
+
+export async function commentUpdate(param: {
+  auditId: string;
+  userEmail: string;
+  body: CommentUpdateReqType;
+}) {
+  validatePayload(
+    'swagger.json#/components/schemas/CommentUpdateReq',
+    param.body
+  );
+
+  const log = await Audit.get(param.auditId);
+
+  if (log.user !== param.userEmail) {
+    NcError.unauthorized('Unauthorized access');
+  }
+  return await Audit.commentUpdate(param.auditId, param.body);
 }

@@ -2,6 +2,7 @@ import { expect } from '@playwright/test';
 import BasePage from '../../../Base';
 import { ToolbarPage } from './index';
 import { UITypes } from 'nocodb-sdk';
+import { getTextExcludeIconText } from '../../../../tests/utils/general';
 
 export class ToolbarFilterPage extends BasePage {
   readonly toolbar: ToolbarPage;
@@ -16,7 +17,10 @@ export class ToolbarFilterPage extends BasePage {
   }
 
   async verify({ index, column, operator, value }: { index: number; column: string; operator: string; value: string }) {
-    await expect(this.get().locator('.nc-filter-field-select').nth(index)).toHaveText(column);
+    const fieldLocator = await this.get().locator('.nc-filter-field-select').nth(index);
+    const fieldText = await getTextExcludeIconText(fieldLocator);
+    await expect(fieldText).toBe(column);
+
     await expect(this.get().locator('.nc-filter-operation-select').nth(index)).toHaveText(operator);
     await expect
       .poll(async () => await this.get().locator('.nc-filter-value-select > input').nth(index).inputValue())
@@ -34,53 +38,53 @@ export class ToolbarFilterPage extends BasePage {
   }
 
   async add({
-    columnTitle,
-    opType,
-    opSubType,
+    title,
+    operation,
+    subOperation,
     value,
-    isLocallySaved,
+    locallySaved = false,
     dataType,
     openModal = false,
   }: {
-    columnTitle: string;
-    opType: string;
-    opSubType?: string; // for date datatype
+    title: string;
+    operation: string;
+    subOperation?: string; // for date datatype
     value?: string;
-    isLocallySaved: boolean;
+    locallySaved?: boolean;
     dataType?: string;
     openModal?: boolean;
   }) {
     if (!openModal) await this.get().locator(`button:has-text("Add Filter")`).first().click();
 
     const selectedField = await this.rootPage.locator('.nc-filter-field-select').textContent();
-    if (selectedField !== columnTitle) {
+    if (selectedField !== title) {
       await this.rootPage.locator('.nc-filter-field-select').last().click();
       await this.rootPage
         .locator('div.ant-select-dropdown.nc-dropdown-toolbar-field-list')
-        .locator(`div[label="${columnTitle}"]:visible`)
+        .locator(`div[label="${title}"]:visible`)
         .click();
     }
 
     const selectedOpType = await this.rootPage.locator('.nc-filter-operation-select').textContent();
-    if (selectedOpType !== opType) {
+    if (selectedOpType !== operation) {
       await this.rootPage.locator('.nc-filter-operation-select').click();
       // first() : filter list has >, >=
       await this.rootPage
         .locator('.nc-dropdown-filter-comp-op')
-        .locator(`.ant-select-item:has-text("${opType}")`)
+        .locator(`.ant-select-item:has-text("${operation}")`)
         .first()
         .click();
     }
 
     // subtype for date
-    if (dataType === UITypes.Date && opSubType) {
+    if (dataType === UITypes.Date && subOperation) {
       const selectedSubType = await this.rootPage.locator('.nc-filter-sub_operation-select').textContent();
-      if (selectedSubType !== opSubType) {
+      if (selectedSubType !== subOperation) {
         await this.rootPage.locator('.nc-filter-sub_operation-select').click();
         // first() : filter list has >, >=
         await this.rootPage
           .locator('.nc-dropdown-filter-comp-sub-op')
-          .locator(`.ant-select-item:has-text("${opSubType}")`)
+          .locator(`.ant-select-item:has-text("${subOperation}")`)
           .first()
           .click();
       }
@@ -90,8 +94,28 @@ export class ToolbarFilterPage extends BasePage {
     if (value) {
       let fillFilter: any = null;
       switch (dataType) {
+        case UITypes.Year:
+          await this.get().locator('.nc-filter-value-select').click();
+          await this.rootPage.locator(`.ant-picker-dropdown:visible`);
+          await this.rootPage.locator(`.ant-picker-cell-inner:has-text("${value}")`).click();
+          break;
+        case UITypes.Time:
+          // eslint-disable-next-line no-case-declarations
+          const time = value.split(':');
+          await this.get().locator('.nc-filter-value-select').click();
+          await this.rootPage.locator(`.ant-picker-dropdown:visible`);
+          await this.rootPage
+            .locator(`.ant-picker-time-panel-column:nth-child(1)`)
+            .locator(`.ant-picker-time-panel-cell:has-text("${time[0]}")`)
+            .click();
+          await this.rootPage
+            .locator(`.ant-picker-time-panel-column:nth-child(2)`)
+            .locator(`.ant-picker-time-panel-cell:has-text("${time[1]}")`)
+            .click();
+          await this.rootPage.locator(`.ant-btn-primary:has-text("Ok")`).click();
+          break;
         case UITypes.Date:
-          if (opSubType === 'exact date') {
+          if (subOperation === 'exact date') {
             await this.get().locator('.nc-filter-value-select').click();
             await this.rootPage.locator(`.ant-picker-dropdown:visible`);
             await this.rootPage.locator(`.ant-picker-cell-inner:has-text("${value}")`).click();
@@ -100,11 +124,10 @@ export class ToolbarFilterPage extends BasePage {
             await this.waitForResponse({
               uiAction: fillFilter,
               httpMethodsToMatch: ['GET'],
-              requestUrlPathToMatch: isLocallySaved ? `/api/v1/db/public/` : `/api/v1/db/data/noco/`,
+              requestUrlPathToMatch: locallySaved ? `/api/v1/db/public/` : `/api/v1/db/data/noco/`,
             });
             await this.toolbar.parent.dashboard.waitForLoaderToDisappear();
             await this.toolbar.parent.waitLoading();
-            break;
           }
           break;
         case UITypes.Duration:
@@ -151,7 +174,7 @@ export class ToolbarFilterPage extends BasePage {
           await this.waitForResponse({
             uiAction: fillFilter,
             httpMethodsToMatch: ['GET'],
-            requestUrlPathToMatch: isLocallySaved ? `/api/v1/db/public/` : `/api/v1/db/data/noco/`,
+            requestUrlPathToMatch: locallySaved ? `/api/v1/db/public/` : `/api/v1/db/data/noco/`,
           });
           await this.toolbar.parent.dashboard.waitForLoaderToDisappear();
           await this.toolbar.parent.waitLoading();
